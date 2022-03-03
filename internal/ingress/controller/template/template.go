@@ -1463,12 +1463,35 @@ func buildMirrorLocations(locs []*ingress.Location) string {
 		}
 
 		mapped.Insert(loc.Mirror.Source)
+		clientBodyBufferSize := ""
+		if isValidByteSize(loc.ClientBodyBufferSize, true) {
+			clientBodyBufferSize = fmt.Sprintf("client_body_buffer_size %v;", loc.ClientBodyBufferSize)
+		}
+
+		clientMaxBodySize := ""
+		if isValidByteSize(loc.Proxy.BodySize, true) {
+			clientMaxBodySize = fmt.Sprintf("client_max_body_size %v;", loc.Proxy.BodySize)
+		}
+
+		prxyMaxTempFileSize := ""
+		if isValidByteSize(loc.Proxy.ProxyMaxTempFileSize, true) {
+			prxyMaxTempFileSize = fmt.Sprintf("proxy_max_temp_file_size %v;", loc.Proxy.ProxyMaxTempFileSize)
+		}
+
 		buffer.WriteString(fmt.Sprintf(`location = %v {
 internal;
+
+opentracing on;
+opentracing_propagate_context;
+proxy_buffer_size %v;
+proxy_buffers %v %v;
+%v
+%v
+%v
 proxy_pass %v;
 }
 
-`, loc.Mirror.Source, loc.Mirror.Target))
+`, loc.Mirror.Source, loc.Proxy.BufferSize, loc.Proxy.BuffersNumber, loc.Proxy.BodySize, clientBodyBufferSize, clientMaxBodySize, prxyMaxTempFileSize, loc.Mirror.Target))
 	}
 
 	return buffer.String()
