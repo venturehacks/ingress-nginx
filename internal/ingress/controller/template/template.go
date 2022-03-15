@@ -1478,6 +1478,11 @@ func buildMirrorLocations(locs []*ingress.Location) string {
 			proxyMaxTempFileSize = fmt.Sprintf("proxy_max_temp_file_size %v;", loc.Proxy.ProxyMaxTempFileSize)
 		}
 
+		host := ""
+		u, err := url.Parse(loc.Mirror.Target)
+		if err == nil {
+			host = fmt.Sprintf("proxy_set_header Host \"%s\";", u.Host)
+		}
 		buffer.WriteString(fmt.Sprintf(`location = %v {
 internal;
 
@@ -1489,10 +1494,11 @@ proxy_buffers %v %v;
 %v
 %v
 %v
+%s
 proxy_pass %v;
 }
 
-`, loc.Mirror.Source, loc.Proxy.BufferSize, loc.Proxy.BuffersNumber, loc.Proxy.BodySize, clientBodyBufferSize, clientMaxBodySize, proxyMaxTempFileSize, loc.ConfigurationSnippet, loc.Mirror.Target))
+`, loc.Mirror.Source, loc.Proxy.BufferSize, loc.Proxy.BuffersNumber, loc.Proxy.BodySize, clientBodyBufferSize, clientMaxBodySize, proxyMaxTempFileSize, loc.ConfigurationSnippet, host, loc.Mirror.Target))
 	}
 
 	return buffer.String()
