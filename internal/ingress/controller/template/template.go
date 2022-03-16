@@ -1479,7 +1479,7 @@ func buildMirrorLocations(locs []*ingress.Location) string {
 		}
 
 		host := ""
-		u, err := url.Parse(loc.Mirror.Target)
+		u, err := url.Parse(strings.Replace(loc.Mirror.Target, "$", "/", -1))
 		if err == nil {
 			host = fmt.Sprintf("proxy_set_header Host \"%s\";", u.Host)
 		}
